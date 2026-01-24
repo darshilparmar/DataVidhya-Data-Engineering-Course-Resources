@@ -1,0 +1,119 @@
+%flink.ssql
+-- Enable checkpointing so sinks flush data
+SET 'execution.checkpointing.interval' = '10 s';
+SET 'execution.checkpointing.mode' = 'EXACTLY_ONCE';
+
+-- ========================================
+-- 1) Source Table from Kinesis
+-- ========================================
+CREATE TABLE air_quality_source (
+  location_id STRING,
+  location_name STRING,
+  parameter_of_AQI STRING,
+  value_of_AQI DOUBLE,
+  unit STRING,
+  processing_time TIMESTAMP_LTZ(3) METADATA FROM 'timestamp',
+  timezone STRING,
+  latitude DOUBLE,
+  longitude DOUBLE,
+  country_iso STRING,
+  isMobile BOOLEAN,
+  isMonitor BOOLEAN,
+  owner_name STRING,
+  provider STRING,
+  shard_id STRING METADATA FROM 'shard-id',
+  sequence_number STRING METADATA FROM 'sequence-number',
+  WATERMARK FOR processing_time AS processing_time - INTERVAL '5' SECOND
+)
+WITH (
+  'connector' = 'kinesis',
+  'stream' = 'AQI_Stream',
+  'aws.region' = 'us-east-1',
+  'format' = 'json',
+  'json.ignore-parse-errors' = 'true',
+  'scan.stream.initpos' = 'TRIM_HORIZON'
+);
+
+
+-- ========================================
+-- 2) S3 Sink Table (JSON)
+-- ========================================
+CREATE TABLE aqi_s3_sink (
+  location_id STRING,
+  location_name STRING,
+  parameter_of_AQI STRING,
+  value_of_AQI DOUBLE,
+  unit STRING,
+  timezone STRING,
+  latitude DOUBLE,
+  longitude DOUBLE,
+  country_iso STRING,
+  isMobile BOOLEAN,
+  isMonitor BOOLEAN,
+  owner_name STRING,
+  provider STRING,
+  parameter_uppercase STRING,
+  value_in_fahrenheit DOUBLE
+)
+WITH (
+  'connector' = 'filesystem',
+  'path' = 's3://analyticallayer/co-measurements/',
+  'format' = 'json',
+  'sink.rolling-policy.file-size' = '1MB',
+  'sink.rolling-policy.rollover-interval' = '30 s',
+  'sink.rolling-policy.check-interval' = '10 s'
+);
+
+
+-- ========================================
+-- 3) Insert into S3 Sink
+-- ========================================
+INSERT INTO aqi_s3_sink
+SELECT
+  location_id,
+  location_name,
+  parameter_of_AQI,
+  value_of_AQI,
+  unit,
+  timezone,
+  latitude,
+  longitude,
+  country_iso,
+  isMobile,
+  isMonitor,
+  owner_name,
+  provider,
+  UPPER(parameter_of_AQI) AS parameter_uppercase,
+  value_of_AQI * 1.8 + 32 AS value_in_fahrenheit
+ FROM air_quality_source;
+
+
+-- ========================================
+-- 4) Insert into Kinesis Sink
+-- ========================================
+
+CREATE TABLE aqi_logs_sink (
+  window_end TIMESTAMP_LTZ(3),
+  record_count BIGINT
+)
+WITH (
+  'connector' = 'kinesis',
+  'stream' = 'AQI_Logs',
+  'aws.region' = 'us-east-1',
+  'format' = 'json',
+  'sink.partitioner' = 'random'
+);
+
+-- ========================================
+-- 5) Inserting records in sink table.
+-- ========================================
+INSERT INTO aqi_logs_sink
+SELECT
+  window_end,
+  COUNT(*) AS record_count
+FROM TABLE(
+  TUMBLE(TABLE air_quality_source, DESCRIPTOR(processing_time), INTERVAL '1' MINUTE)
+)
+GROUP BY window_start, window_end;
+
+

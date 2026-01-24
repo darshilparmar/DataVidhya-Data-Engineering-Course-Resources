@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Application": {
+      "Type": "AWS::EMRServerless::Application",
+      "Properties": {
+        "Type": "Spark",
+        "Name": "EMR_Serverless_Application",
+        "ReleaseLabel": "emr-6.9.0"
+      }
+    }
+  }
+}

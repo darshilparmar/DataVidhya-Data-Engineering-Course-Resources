@@ -1,0 +1,92 @@
+import json
+import boto3
+import base64
+import time
+import os
+from datetime import datetime, timezone
+
+logs_client = boto3.client("logs")
+sns_client = boto3.client("sns")
+
+LOG_GROUP = "/aws/lambda/Logs_to_Cloud_Watch"
+LOG_STREAM = "AQI_Logs_Stream"
+SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:640958509818:Records_SNS"
+
+def ensure_log_stream():
+    try:
+        logs_client.create_log_group(logGroupName=LOG_GROUP)
+    except logs_client.exceptions.ResourceAlreadyExistsException:
+        pass
+
+    try:
+        logs_client.create_log_stream(
+            logGroupName=LOG_GROUP, logStreamName=LOG_STREAM
+        )
+    except logs_client.exceptions.ResourceAlreadyExistsException:
+        pass
+
+def lambda_handler(event, context):
+    ensure_log_stream()
+
+    log_events = []
+    record_count = 0
+
+    # Case 1: No Records at all
+    if "Records" not in event or not event["Records"]:
+        log_events.append({
+            "timestamp": int(time.time() * 1000),
+            "message": json.dumps({
+                "window_end": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "record_count": 0
+            })
+        })
+    else:
+        # Case 2: Records present
+        for record in event["Records"]:
+            payload = base64.b64decode(record["kinesis"]["data"]).decode("utf-8")
+            try:
+                data = json.loads(payload)
+            except:
+                data = {"raw": payload}
+
+            log_events.append({
+                "timestamp": int(time.time() * 1000),
+                "message": json.dumps(data)
+            })
+            record_count += 1
+
+    # Push to CloudWatch
+    if log_events:
+        try:
+            logs_client.put_log_events(
+                logGroupName=LOG_GROUP,
+                logStreamName=LOG_STREAM,
+                logEvents=log_events
+            )
+        except logs_client.exceptions.InvalidSequenceTokenException as e:
+            expected = e.response["expectedSequenceToken"]
+            logs_client.put_log_events(
+                logGroupName=LOG_GROUP,
+                logStreamName=LOG_STREAM,
+                logEvents=log_events,
+                sequenceToken=expected
+            )
+
+    # Send SNS summary
+    message = {
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()),
+        "records_received": record_count,
+        "log_group": LOG_GROUP,
+        "log_stream": LOG_STREAM
+    }
+
+    sns_client.publish(
+        TopicArn=SNS_TOPIC_ARN,
+        Subject="AQI Logs Update",
+        Message=json.dumps(message, indent=2)
+    )
+
+    return {
+        "statusCode": 200,
+        "body": f"Pushed {record_count} records (or 0 if empty) to CloudWatch and sent SNS notification"
+    }

@@ -1,0 +1,77 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "StepFunctionsExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "StepFunctions-EMR-ExecutionRole",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "states.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "StepFunctionsEMRPolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "emr-serverless:StartJobRun",
+                    "emr-serverless:GetJobRun",
+                    "emr-serverless:CancelJobRun"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject",
+                    "s3:PutObject",
+                    "s3:ListBucket"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "events:PutRule",
+                    "events:DeleteRule",
+                    "events:DescribeRule",
+                    "events:PutTargets",
+                    "events:RemoveTargets"
+                  ],
+                  "Resource": [
+                    "arn:aws:events:*:*:rule/StepFunctionsGetEventsFor*",
+                    "arn:aws:events:*:*:rule/StepFunctions*"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "StateMachine": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "StateMachineName": "State_EMR",
+        "RoleArn": {
+          "Fn::GetAtt": "StepFunctionsExecutionRole.Arn"
+        },
+        "DefinitionString": {
+          "Fn::Sub": "{\n  \"Comment\": \"Run EMR Serverless Spark job\",\n  \"StartAt\": \"RunSparkJob\",\n  \"States\": {\n    \"RunSparkJob\": {\n      \"Type\": \"Task\",\n      \"Resource\": \"arn:aws:states:::emr-serverless:startJobRun.sync\",\n      \"Parameters\": {\n        \"ApplicationId\": \"00g0krba35bqe209\",\n        \"ExecutionRoleArn\": \"arn:aws:iam::12345678910:role/service-role/AmazonEMR-ExecutionRole-1757850783950\",\n        \"JobDriver\": {\n          \"SparkSubmit\": {\n            \"EntryPoint\": \"s3://ridestreamlakehouse/scripts/Spark_job.py\",\n            \"SparkSubmitParameters\": \"--conf spark.executor.memory=2g --conf spark.executor.cores=2\"\n          }\n        }\n      },\n      \"End\": true\n    }\n  }\n}"
+        }
+      }
+    }
+  }
+}

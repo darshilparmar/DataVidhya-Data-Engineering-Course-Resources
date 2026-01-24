@@ -1,0 +1,4 @@
+bin/kafka-topics.sh --create --topic first_topic --command-config /home/ec2-user/kafka_2.12-2.8.1/bin/client.properties --partitions 1 --bootstrap-server b-zryemvsdjs.c1.kafka-serverless.us-east-1.amazonaws.com:9098
+
+bin/kafka-console-producer.sh --topic first_topic --producer.config /home/ec2-user/kafka_2.12-2.8.1/bin/client.properties --bootstrap-server b-zryemvsdjs.c1.kafka-serverless.us-east-1.amazonaws.com:9098
+bin/kafka-console-consumer.sh --topic first_topic  --consumer.config /home/ec2-user/kafka_2.12-2.8.1/bin/client.properties --from-beginning --bootstrap-server b-zryemvsdjs.c1.kafka-serverless.us-east-1.amazonaws.com:9098

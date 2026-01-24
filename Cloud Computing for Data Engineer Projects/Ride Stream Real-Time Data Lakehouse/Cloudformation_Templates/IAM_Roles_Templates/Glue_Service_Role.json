@@ -1,0 +1,39 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "CloudFormation template to create an IAM role named Glue_S3_msk_Access_PRD with full S3 access and MSK permissions.",
+  "Resources": {
+    "GlueS3MskAccessPRDRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "Glue_S3_msk_Access_PRD",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "glue.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+          "arn:aws:iam::aws:policy/AmazonMSKFullAccess"
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "RoleArn": {
+      "Description": "ARN of the created IAM role",
+      "Value": {
+        "Fn::GetAtt": [
+          "GlueS3MskAccessPRDRole",
+          "Arn"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+#revenue.yml
+
+#Generic Test running this test to check the data is unqiue and not null based and description also
+
+version: 2
+
+models:
+  - name: revenue
+    description: "This model aggregates total revenue by vendor using fact trip data and vendor dimension."
+    columns:
+      - name: vendor_id
+        description: "Unique identifier for the vendor (from dim_vendor)."
+        tests:
+          - not_null
+          - unique
+
+      - name: revenue
+        description: "Total revenue generated per vendor, calculated as SUM(total_revenue) from fact trips."
+        tests:
+          - not_null
+
+
+command : dbt test
+
+#Specific Test check_revenue
+#Save this test in revenue_not_negative.sql 
+
+select *
+from {{ source('taxi_source', 'facts') }} f
+where total_revenue<0
+                     
+command : dbt test --select revenue_not_negative
+

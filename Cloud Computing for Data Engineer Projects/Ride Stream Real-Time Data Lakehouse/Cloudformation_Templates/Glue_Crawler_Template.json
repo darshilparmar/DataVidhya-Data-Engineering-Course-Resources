@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "BasicCrawler": {
+      "Type": "AWS::Glue::Crawler",
+      "Properties": {
+        "Name": "Glue_Crawler_Production",
+        "Role": {
+          "Fn::Sub": "arn:aws:iam::12345678910:role/Glue_S3_msk_Access"
+        },
+        "DatabaseName": "default",
+        "Targets": {
+          "S3Targets": [
+            {
+              "Path": "s3://ridestreamlakehouse/Business/"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Create a Kinesis Firehose Delivery Stream that reads from a Kinesis stream and writes to S3",
+  "Resources": {
+    "MyMSKBatchDeliveryStream": {
+      "Type": "AWS::KinesisFirehose::DeliveryStream",
+      "Properties": {
+        "DeliveryStreamName": "MSK_Batch",
+        "DeliveryStreamType": "KinesisStreamAsSource",
+        "KinesisStreamSourceConfiguration": {
+          "KinesisStreamARN": "arn:aws:kinesis:us-east-1:123456789101:stream/AQI_Stream",
+          "RoleARN": "arn:aws:iam::123456789101:role/service-role/KinesisFirehoseServiceRole-AQI_Batch-us-east-1-1755365116218"
+        },
+        "S3DestinationConfiguration": {
+          "RoleARN": "arn:aws:iam::123456789101:role/service-role/KinesisFirehoseServiceRole-AQI_Batch-us-east-1-1755365116218",
+          "BucketARN": "arn:aws:s3:::aws-glue-assets-123456789101-us-east-1",
+          "Prefix": "input/",
+          "BufferingHints": {
+            "IntervalInSeconds": 300,
+            "SizeInMBs": 5
+          }
+        }
+      }
+    }
+  }
+}

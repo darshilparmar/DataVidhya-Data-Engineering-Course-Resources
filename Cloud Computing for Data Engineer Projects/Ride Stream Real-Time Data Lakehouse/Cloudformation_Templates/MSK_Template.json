@@ -1,0 +1,44 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "MSK Serverless Cluster",
+  "Parameters": {
+    "SubnetId1": {
+      "Type": "AWS::EC2::Subnet::Id",
+      "Description": "First subnet ID (must be in different AZ)"
+    },
+    "SubnetId2": {
+      "Type": "AWS::EC2::Subnet::Id", 
+      "Description": "Second subnet ID (must be in different AZ)"
+    },
+    "SecurityGroupId": {
+      "Type": "AWS::EC2::SecurityGroup::Id",
+      "Description": "Security Group ID"
+    }
+  },
+  "Resources": {
+    "MSKServerlessCluster": {
+      "Type": "AWS::MSK::ServerlessCluster",
+      "Properties": {
+        "ClusterName": "Kafka-Production",
+        "VpcConfigs": [
+          {
+            "SubnetIds": [
+              {"Ref": "SubnetId1"},
+              {"Ref": "SubnetId2"}
+            ],
+            "SecurityGroups": [
+              {"Ref": "SecurityGroupId"}
+            ]
+          }
+        ],
+        "ClientAuthentication": {
+          "Sasl": {
+            "Iam": {
+              "Enabled": true
+            }
+          }
+        }
+      }
+    }
+  }
+}

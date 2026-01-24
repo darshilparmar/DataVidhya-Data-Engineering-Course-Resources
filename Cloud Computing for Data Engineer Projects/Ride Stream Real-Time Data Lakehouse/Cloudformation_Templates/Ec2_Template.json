@@ -1,0 +1,89 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Create an EC2 instance from pre-configured AMI",
+  "Parameters": {
+    "EC2KeyPair": {
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Description": "Name of an existing EC2 KeyPair to SSH into the instance"
+    },
+    "VPC": {
+      "Type": "AWS::EC2::VPC::Id",
+      "Description": "Select your VPC"
+    },
+    "PublicSubnet": {
+      "Type": "AWS::EC2::Subnet::Id",
+      "Description": "Select a Public Subnet"
+    },
+    "CustomAMI": {
+      "Type": "String",
+      "Description": "AMI ID of your pre-configured machine",
+      "Default": "ami-08982f1c5bf93d976"
+    }
+  },
+  "Resources": {
+    "MyEC2Instance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType": "t2.micro",
+        "KeyName": {
+          "Ref": "EC2KeyPair"
+        },
+        "ImageId": {
+          "Ref": "CustomAMI"
+        },
+        "SecurityGroupIds": [
+          {
+            "Ref": "InstanceSecurityGroup"
+          }
+        ],
+        "SubnetId": {
+          "Ref": "PublicSubnet"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "My Kafka Client Instance"
+          }
+        ]
+     
+      }
+    },
+    "InstanceSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Enable SSH access",
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 22,
+            "ToPort": 22,
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "InstancePublicIP": {
+      "Description": "Public IP of the EC2 instance",
+      "Value": {
+        "Fn::GetAtt": [
+          "MyEC2Instance",
+          "PublicIp"
+        ]
+      }
+    },
+    "InstancePublicDNS": {
+      "Description": "Public DNS of the EC2 instance",
+      "Value": {
+        "Fn::GetAtt": [
+          "MyEC2Instance",
+          "PublicDnsName"
+        ]
+      }
+    }
+  }
+}

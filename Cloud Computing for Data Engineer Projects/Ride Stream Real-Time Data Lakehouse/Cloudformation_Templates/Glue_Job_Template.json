@@ -1,0 +1,30 @@
+{
+  "Parameters": {
+    "JobName": {
+      "Type": "String",
+      "Default": "Raw2Ref"
+    }
+  },
+  "Resources": {
+    "MyGlueJob": {
+      "Type": "AWS::Glue::Job",
+      "Properties": {
+        "Name": {
+          "Ref": "JobName"
+        },
+        "Role": "arn:aws:iam::12345678910:role/Glue_S3_msk_Access",
+        "Command": {
+          "Name": "glueetl",
+          "ScriptLocation": "s3://aws-glue-assets-12345678910-us-east-1/scripts/RAW_TO_REFINED.py"
+        },
+        "DefaultArguments": {
+          "--job-bookmark-option": "job-bookmark-enable"
+        },
+        "GlueVersion": "4.0",
+        "WorkerType": "G.1X",
+        "NumberOfWorkers": 2
+      }
+    }
+  }
+
+}

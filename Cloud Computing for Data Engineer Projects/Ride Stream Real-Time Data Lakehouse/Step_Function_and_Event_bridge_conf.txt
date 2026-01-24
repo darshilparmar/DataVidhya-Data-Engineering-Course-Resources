@@ -1,0 +1,47 @@
+
+State Machine we need to provide this code to trigger the EMR Job
+
+{
+  "ApplicationId": "00fvktfvpj62n509",
+  "Name": "EMR_Job",
+  "ExecutionRoleArn": "arn:aws:iam::640958509818:role/service-role/AmazonEMR-ExecutionRole-1757850783950",
+  "JobDriver": {
+    "SparkSubmit": {
+      "EntryPoint": "s3://aws-glue-assets/glue/spark_job.py",
+      "EntryPointArguments": [],
+      "SparkSubmitParameters": "--conf spark.executor.memory=2g --conf spark.executor.cores=2 --conf spark.driver.memory=2g"
+    }
+  }
+}
+
+
+#Creation of PassRole IAM Role so that EMR Execution Role can be given to the Step Function.
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "iam:PassRole",
+            "Resource": "arn:aws:iam::640958509818:role/service-role/AmazonEMR-ExecutionRole-1757850783950"
+        }
+    ]
+}
+
+
+# Pattern we need to give in EventBridge rule to get S3 Put and trigger the Step Function :
+
+{
+  "source": ["aws.s3"],
+  "detail-type": ["Object Created"],
+  "detail": {
+    "bucket": {
+      "name": ["aws-glue-assets"]
+    },
+    "object": {
+      "key": [{
+        "prefix": "output/processed/"
+      }]
+    }
+  }
+}

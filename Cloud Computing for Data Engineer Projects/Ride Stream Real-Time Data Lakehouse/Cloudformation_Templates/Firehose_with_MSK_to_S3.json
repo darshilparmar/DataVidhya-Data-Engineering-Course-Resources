@@ -1,0 +1,148 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Create a Kinesis Firehose Delivery Stream that reads from MSK Serverless and writes to S3 with VPC connection policy",
+
+  "Resources": {
+    "FirehoseServiceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "KinesisFirehoseServiceRole-MSK_Batch",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "firehose.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "FirehoseMSKtoS3Policy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "kafka:GetBootstrapBrokers",
+                    "kafka:DescribeCluster",
+                    "kafka:DescribeClusterV2",
+                    "kafka-cluster:Connect",
+                    "kafka-cluster:DescribeTopic",
+                    "kafka-cluster:ReadData",
+                    "kafka-cluster:DescribeGroup",
+                    "kafka-cluster:AlterGroup"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:PutObject",
+                    "s3:PutObjectAcl",
+                    "s3:GetBucketLocation",
+                    "s3:ListBucket"
+                  ],
+                  "Resource": [
+                    "arn:aws:s3:::aws-glue-assets-123456789191-us-east-1",
+                    "arn:aws:s3:::aws-glue-assets-123456789191-us-east-1/*"
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+
+    "MyMSKClusterPolicy": {
+      "Type": "AWS::MSK::ClusterPolicy",
+      "Properties": {
+        "ClusterArn": "arn:aws:kafka:us-east-1:123456789191:cluster/MSK/ba7eb6b6-307e-432d-af38-d0bb09003f2e-s1",
+        "Policy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AllowFirehoseToCreateVpcConnection",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "firehose.amazonaws.com"
+              },
+              "Action": [
+                "kafka:CreateVpcConnection"
+              ],
+              "Resource": "arn:aws:kafka:us-east-1:123456789191:cluster/MSK/ba7eb6b6-307e-432d-af38-d0bb09003f2e-s1",
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": "123456789191"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+
+    "MyMSKBatchDeliveryStream": {
+      "Type": "AWS::KinesisFirehose::DeliveryStream",
+      "DependsOn": "MyMSKClusterPolicy",
+      "Properties": {
+        "DeliveryStreamName": "MSK_Batch",
+        "DeliveryStreamType": "MSKAsSource",
+        "MSKSourceConfiguration": {
+          "MSKClusterARN": "arn:aws:kafka:us-east-1:123456789191:cluster/MSK/ba7eb6b6-307e-432d-af38-d0bb09003f2e-s1",
+          "TopicName": "Ride_Stream",
+          "AuthenticationConfiguration": {
+            "Connectivity": "PRIVATE",
+            "RoleARN": {
+              "Fn::GetAtt": ["FirehoseServiceRole", "Arn"]
+            }
+          }
+        },
+        "ExtendedS3DestinationConfiguration": {
+          "RoleARN": {
+            "Fn::GetAtt": ["FirehoseServiceRole", "Arn"]
+          },
+          "BucketARN": "arn:aws:s3:::aws-glue-assets-123456789191-us-east-1",
+          "Prefix": "RAW/",
+          "BufferingHints": {
+            "IntervalInSeconds": 300,
+            "SizeInMBs": 5
+          },
+          "CompressionFormat": "UNCOMPRESSED",
+          "ErrorOutputPrefix": "errors/"
+        }
+      }
+    }
+  },
+
+  "Outputs": {
+    "DeliveryStreamARN": {
+      "Description": "ARN of the Kinesis Firehose Delivery Stream",
+      "Value": {
+        "Ref": "MyMSKBatchDeliveryStream"
+      }
+    },
+    "DeliveryStreamName": {
+      "Description": "Name of the Kinesis Firehose Delivery Stream",
+      "Value": "MSK_Batch"
+    },
+    "FirehoseRoleARN": {
+      "Description": "IAM Role used by Firehose",
+      "Value": {
+        "Fn::GetAtt": ["FirehoseServiceRole", "Arn"]
+      }
+    }
+  }
+}
