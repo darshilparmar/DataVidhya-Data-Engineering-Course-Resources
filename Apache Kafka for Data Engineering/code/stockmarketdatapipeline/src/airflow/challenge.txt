@@ -1,0 +1,6 @@
+
+1. Integrate MinioCheck in Airflow and remove Producer and Consumer
+2. Build Airflow pipleine of batch to process yesterday
+3. Run Airflow pipeline every hour to update stream data and load in Snowflake
+4. Visualzation for different stocks 
+

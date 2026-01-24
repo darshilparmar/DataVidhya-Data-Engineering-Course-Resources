@@ -1,0 +1,19 @@
+# API and Data Fetching
+requests==2.31.0
+
+# Kafka Integration
+confluent-kafka==2.3.0
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# Logging and Utilities
+loguru==0.7.2
+
+#yahoo finance
+yfinance
+
+minio
+
+fastparquet
+pyarrow
