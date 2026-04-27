@@ -1,0 +1,24 @@
+-- KQL Queries :
+
+-- To get 100 Sample records
+Ingestion_table
+| take 100
+
+
+-- To expand Customer JSON Data :
+
+Ingestion_table
+| project event_id,customer.customer_id,customer.full_name
+| take 100
+
+--To expand Device JSON Data :
+
+-- Use 'take' to view a sample number of records in the table and check the data.
+Ingestion_table
+| project event_id,device.browser,device.ip_address
+| take 100
+
+
+-- Get total counts :
+
+Ingestion_table | count; 

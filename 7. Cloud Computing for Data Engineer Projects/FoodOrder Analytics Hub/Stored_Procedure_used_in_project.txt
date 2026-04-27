@@ -1,0 +1,6 @@
+Types of Stored Procedure used :
+
+- Insertion
+- Updation
+- Deletion
+- Dim_Date
