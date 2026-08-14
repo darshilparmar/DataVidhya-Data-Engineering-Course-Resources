@@ -1,0 +1,83 @@
+version: 2
+
+sources:
+  - name: airlens_core
+    catalog: airlens
+    schema: core
+    tables:
+      - name: silver_aq_readings
+      - name: silver_weather
+      - name: silver_stations
+
+models:
+  - name: stg_air_quality
+    description: Typed view over source-specific air quality measurements.
+    columns:
+      - name: city
+        tests: [not_null]
+      - name: source
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['openweather', 'waqi']
+      - name: aqi_scale
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['openweather-1-5', 'us-epa-0-500']
+
+  - name: stg_weather
+    description: Typed view over OpenWeather weather observations.
+    columns:
+      - name: city
+        tests: [not_null]
+      - name: measured_at_utc
+        tests: [not_null]
+
+  - name: stg_stations
+    description: Typed view over the OpenAQ station registry.
+    columns:
+      - name: query_city
+        tests: [not_null]
+      - name: station_id
+        tests: [not_null]
+
+  - name: mart_city_air_quality
+    description: Hourly city air quality mart with AQI scales kept explicit.
+    columns:
+      - name: city_source_measurement_hour
+        tests: [not_null, unique]
+      - name: city
+        tests: [not_null]
+      - name: source
+        tests: [not_null]
+      - name: measured_at_utc
+        tests: [not_null]
+      - name: aqi_scale
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['openweather-1-5', 'us-epa-0-500']
+
+  - name: mart_city_daily
+    description: Incremental daily city mart, grouped within each source and AQI scale.
+    columns:
+      - name: city_source_date
+        tests: [not_null, unique]
+      - name: aqi_scale
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['openweather-1-5', 'us-epa-0-500']
+
+  - name: mart_station_coverage
+    description: One coverage summary per queried city.
+    columns:
+      - name: city
+        tests: [not_null, unique]
+      - name: station_count
+        tests: [not_null]

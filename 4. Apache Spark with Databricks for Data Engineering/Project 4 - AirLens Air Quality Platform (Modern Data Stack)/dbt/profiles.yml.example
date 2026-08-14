@@ -1,0 +1,12 @@
+airlens:
+  target: dev
+  outputs:
+    dev:
+      type: databricks
+      method: http
+      host: "{{ env_var('DBT_DATABRICKS_HOST') }}"
+      http_path: "{{ env_var('DBT_DATABRICKS_HTTP_PATH') }}"
+      token: "{{ env_var('DBT_DATABRICKS_TOKEN') }}"
+      catalog: airlens
+      schema: core
+      threads: 4

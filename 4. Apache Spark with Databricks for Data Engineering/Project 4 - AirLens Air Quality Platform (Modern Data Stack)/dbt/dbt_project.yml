@@ -1,0 +1,32 @@
+name: airlens
+version: 1.0.0
+config-version: 2
+
+profile: airlens
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+clean-targets: ["target", "dbt_packages"]
+
+# Write into the Unity Catalog catalog explicitly. Without this, dbt-databricks
+# falls back to the connection default, which on a Unity Catalog only workspace
+# is hive_metastore and is disabled: the run fails with
+# UC_HIVE_METASTORE_DISABLED_EXCEPTION. Seeds need this as much as models do,
+# because seed configs do not inherit from the models block.
+models:
+  airlens:
+    +catalog: airlens
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table
+
+seeds:
+  airlens:
+    +catalog: airlens
+    +quote_columns: false
+    +column_types:
+      city: string
+      country: string
+      timezone: string

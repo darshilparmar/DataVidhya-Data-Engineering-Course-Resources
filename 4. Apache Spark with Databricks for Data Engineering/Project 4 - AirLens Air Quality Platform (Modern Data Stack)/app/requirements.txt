@@ -1,0 +1,4 @@
+duckdb>=1.1,<2
+pandas>=2.2,<3
+pydeck>=0.9,<1
+streamlit>=1.41,<2

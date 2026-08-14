@@ -1,0 +1,21 @@
+city,country,timezone
+Delhi,IN,Asia/Kolkata
+Mumbai,IN,Asia/Kolkata
+Bengaluru,IN,Asia/Kolkata
+Kolkata,IN,Asia/Kolkata
+Chennai,IN,Asia/Kolkata
+Hyderabad,IN,Asia/Kolkata
+Beijing,CN,Asia/Shanghai
+Shanghai,CN,Asia/Shanghai
+Tokyo,JP,Asia/Tokyo
+Jakarta,ID,Asia/Jakarta
+Bangkok,TH,Asia/Bangkok
+Dubai,AE,Asia/Dubai
+London,GB,Europe/London
+Paris,FR,Europe/Paris
+Berlin,DE,Europe/Berlin
+New York,US,America/New_York
+Los Angeles,US,America/Los_Angeles
+Mexico City,MX,America/Mexico_City
+Sao Paulo,BR,America/Sao_Paulo
+Lagos,NG,Africa/Lagos
